@@ -11,25 +11,30 @@
             v-model="text_category"
             outlined 
             dense
-            block/>
+            block
+            />
          </v-col>
          <!-- SEARCH BUTTON -->
           <v-col cols="auto">
             <v-btn @click="searchCategory(text_category)">Search</v-btn>
           </v-col>
       </v-row>
-      <v-row>
       <!-- JOKE CONTENT -->
+      <v-row v-if="currentJokes.length > 0">
       <v-col cols="12">
-        <v-card outlined v-if="currentJokes.length > 0">
+        <v-card outlined>
           <!-- DATE -->
           <v-card-subtitle>
             {{ changeDateFormat(currentJokes[0].updated_at) }}
           </v-card-subtitle>
           <!-- JOKE -->
           <v-card-text>
-            {{ currentJokes[0].value }}
-          </v-card-text>
+  <!-- Display the joke content with the matching word highlighted -->
+        <template v-if="currentJokes.length > 0">
+          <span v-html="highlightMatchingWord"></span>
+        </template>
+        </v-card-text>
+
           <!-- LINK -->
           <v-card-text class="mb-2">
             <a style="float: right;" :href="currentJokes[0].url" target="_blank">Joke Page</a>
@@ -67,7 +72,7 @@ export default {
     progress_circular: false,
     current_page: 1,
     items_per_page: 1, // Adjusted to display one joke per page
-  }),
+    }),
   computed: {
     // CURRENT JOKES
     currentJokes() {
@@ -79,6 +84,16 @@ export default {
     total_pages() {
       return Math.ceil(this.chuck_norris_jokes.length / this.items_per_page);
     },
+    highlightMatchingWord() {
+    if (this.currentJokes.length > 0) {
+      const joke_content = this.currentJokes[0].value;
+      const input_text = this.text_category.toLowerCase();
+      const regex = new RegExp(input_text, 'gi');
+      return joke_content.replace(regex, match => `<b style="background-color:yellow; color:black;">${match}</b>`);
+    } else {
+      return '';
+    }
+  },
   },
   watch: {
     text_category(newval, oldval) {
@@ -88,18 +103,23 @@ export default {
     },
   },
   methods: {
+   
     //CHANGE FORMAT DATE
     changeDateFormat(val) {
       return moment(val).format("YYYY-MM-DD HH:mm");
     },
     //FIRST LOAD
     randomJoke() {
+      this.progress_circular = true;
+
       axios({
         method: "get",
         url: "http://127.0.0.1:5000/chucknorris/random",
       })
         .then((res) => {
           this.chuck_norris_jokes.push(res.data);
+          this.progress_circular = false;
+
         })
         .catch((err) => {
           alert("Something went wrong: " + err.message);
@@ -144,7 +164,3 @@ export default {
   },
 };
 </script>
-
-<style>
-
-</style>
